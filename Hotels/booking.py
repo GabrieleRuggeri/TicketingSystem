@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Any, Literal, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field, model_validator
@@ -22,7 +22,7 @@ class BookingPeriod(BaseModel):
     
 class Booking(BaseModel):
     
-    id : UUID
+    id : UUID = Field(default_factory=lambda: uuid4(), frozen=True)
     guest_id : UUID
     room_id : UUID
     period : BookingPeriod
@@ -43,6 +43,6 @@ class Booking(BaseModel):
     
 class BookingRequestResponse(BaseModel):
 
-    booking_id : UUID
+    booking_id : UUID = Field(description="Booking() unique identifier")
     status : Literal['confirmed', 'denied']
     reason_for_deny : Optional[str]

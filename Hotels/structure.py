@@ -1,23 +1,24 @@
 '''
 Structure class implementation for Hotels module.
 '''
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Literal, Optional
 from datetime import datetime
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field
 from utils import validate_timestamps
 from Hotels.booking import Booking, BookingRequestResponse
 from utils import are_overlapping
 
 class Room(BaseModel):
 
-    id : UUID
+    id : UUID = Field(default_factory=lambda: uuid4(), frozen=True)
     number : str 
     size : Literal['single', 'double', 'triple', 'quadruple', 'multiple']
+    price : float
 
 class Hotel(BaseModel):
 
-    id : UUID
+    id : UUID = Field(default_factory=lambda: uuid4(), frozen=True)
     name : str 
     phone_number : Optional[str] 
     email : Optional[str]
