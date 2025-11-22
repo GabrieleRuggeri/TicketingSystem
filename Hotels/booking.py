@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Any, Literal, Optional
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field, model_validator
 from utils import validate_timestamps
 
