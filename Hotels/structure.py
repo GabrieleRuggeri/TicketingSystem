@@ -3,7 +3,7 @@ Structure class implementation for Hotels module.
 '''
 from uuid import UUID, uuid4
 from typing import Literal, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, model_validator, Field
 from utils import validate_timestamps
 from Hotels.booking import Booking, BookingRequestResponse
@@ -26,8 +26,8 @@ class Hotel(BaseModel):
     bookings : list[Booking]
     city : str
     country : str
-    created_at : datetime
-    last_modified_at : datetime
+    created_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc), frozen=True)
+    last_modified_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     rooms : list[Room]
 
     @model_validator(mode="after")

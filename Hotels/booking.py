@@ -27,7 +27,7 @@ class Booking(BaseModel):
     room_id : UUID
     period : BookingPeriod
     created_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    last_modified_at : datetime
+    last_modified_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status : Literal['confirmed', 'pending', 'cancelled']
 
     @model_validator(mode = "after")

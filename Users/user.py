@@ -57,4 +57,8 @@ class User(BaseModel):
 
         if booking in self.bookings:
             self.bookings.remove(booking)
+
+    def get_bookings(self) -> list[Booking]:
+        """Retrieve the user's bookings list."""
+        return self.bookings if self.bookings is not None else []
     
