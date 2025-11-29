@@ -8,7 +8,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from email.utils import parseaddr                                  # noqa: E402
 from pydantic import BaseModel, Field, field_validator              # noqa: E402
-from typing import Optional                                         # noqa: E402
+from typing import Literal, Optional                                         # noqa: E402
 from uuid import UUID, uuid4                                      # noqa: E402
 from Hotels.booking import Booking                                # noqa: E402
 
@@ -22,6 +22,7 @@ class User(BaseModel):
     email: str
     phone_number: Optional[str]
     bookings: Optional[list[Booking]] = Field(default_factory=list)
+    status: Literal["active", "inactive"]
 
     @field_validator("email")
     @classmethod
