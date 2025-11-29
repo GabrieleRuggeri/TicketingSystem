@@ -11,7 +11,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from typing import Optional  # noqa: E402
-import supabase  # noqa: E402
 from supabase import create_client, Client  # noqa: E402
 import os  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
