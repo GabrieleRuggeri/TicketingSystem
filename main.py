@@ -13,11 +13,30 @@ to perform CRUD operations on the respective resources.
 '''
 
 from fastapi import FastAPI
+
+# base models
 from Users.user import User
 from Hotels.booking import Booking
 from Hotels.structure import Hotel
 
+# routers
+from api.user_routes import user_router
+# from api.booking_routes import booking_router
+# from api.hotel_routes import hotel_router
+
 # Initialize FastAPI app
 app = FastAPI(title="Ticketing System API", version="1.0.0")
+app.include_router(user_router, prefix="/users", tags=["Users"])
+# app.include_router(booking_router, prefix="/bookings", tags=["Bookings"])
+# app.include_router(hotel_router, prefix="/hotels", tags=["Hotels"])
+
+@app.get("")
+async def root():
+    return {"message": "Welcome to the Ticketing System API"}
+
+if __name__ == "__main__":
+    import uvicorn
+    # TODO WARNING: Explain "You must pass the application as an import string to enable 'reload' or 'workers'.", do not apply change.
+    uvicorn.run(app, host="localhost", port=8000, reload=True)
 
 
