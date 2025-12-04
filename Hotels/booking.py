@@ -3,9 +3,15 @@ from typing import Any, Literal, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field, model_validator
 from utils import validate_timestamps
-
-class BookingPeriod(BaseModel):
-
+    
+class Booking(BaseModel):
+    
+    id : UUID = Field(default_factory=lambda: uuid4(), frozen=True)
+    guest_id : UUID
+    room_id : UUID
+    created_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_modified_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status : Literal['confirmed', 'pending', 'cancelled']
     start_date : datetime
     end_date : datetime
     duration : int
@@ -19,21 +25,14 @@ class BookingPeriod(BaseModel):
         if self.end_date <= self.start_date:
             raise ValueError("end_date must be strictly greater than start_date")
         return self
-    
-class Booking(BaseModel):
-    
-    id : UUID = Field(default_factory=lambda: uuid4(), frozen=True)
-    guest_id : UUID
-    room_id : UUID
-    period : BookingPeriod
-    created_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    last_modified_at : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    status : Literal['confirmed', 'pending', 'cancelled']
 
     @model_validator(mode = "after")
     def validate_booking(self):
         # enforce chronological consistency
-        validate_timestamps(self.created_at, self.last_modified_at)
+        try:
+            validate_timestamps(self.created_at, self.last_modified_at)
+        except ValueError as e:
+            raise ValueError(f"Booking {self.id} has invalid timestamps: {e}")
         return self
     
     def update_status(self, new_status: Literal['confirmed', 'cancelled']):
