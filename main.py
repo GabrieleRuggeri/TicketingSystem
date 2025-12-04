@@ -30,13 +30,11 @@ app.include_router(user_router, prefix="/users", tags=["Users"])
 # app.include_router(booking_router, prefix="/bookings", tags=["Bookings"])
 # app.include_router(hotel_router, prefix="/hotels", tags=["Hotels"])
 
-@app.get("")
+@app.get("/")
 async def root():
     return {"message": "Welcome to the Ticketing System API"}
 
 if __name__ == "__main__":
     import uvicorn
-    # TODO WARNING: Explain "You must pass the application as an import string to enable 'reload' or 'workers'.", do not apply change.
-    uvicorn.run(app, host="localhost", port=8000, reload=True)
-
+    uvicorn.run("main:app", host="localhost", port=8000, reload=True)
 
