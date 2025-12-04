@@ -106,14 +106,14 @@ The ER diagram is stored in `Database/schema.md` as a Mermaid block. Open that f
 
 ## Test Suite
 
-`tests/test_models.py` exercises all models and helper utilities:
+`tests/test_models.py` consolidates coverage for every Pydantic model shipped with
+the project:
 
-- `Room`: parametrized tests cover every allowed `size` literal and reject invalid inputs.
-- `BookingPeriod`: enforces strictly increasing dates and recomputes the `duration`.
-- `Booking`: validates timestamp ordering, supported statuses, and status updates.
-- `Hotel`: checks contact fields, object typing, duplicate detection, missing-room denials, overlap logic, and successful confirmations via `book`.
-- `are_overlapping`: verifies detection of overlapping versus disjoint periods.
-- `User`: normalizes and validates email addresses plus add/remove booking helpers.
+- `User`: ensures email normalization and rejects malformed addresses.
+- `Room`: enforces positive pricing via its `model_validator`.
+- `Hotel`: validates chronological consistency between `created_at` and `last_modified_at`.
+- `Booking`: recomputes `duration`, supports status transitions, and guards both stay and audit timestamps.
+- `BookingRequestResponse`: verifies that denial reasons remain optional.
 
 Run the suite with uv:
 

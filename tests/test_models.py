@@ -13,13 +13,13 @@ from uuid import uuid4
 
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Hotels.booking import Booking, BookingRequestResponse
-from Hotels.structure import Hotel, Room
-from Users.user import User
+from Hotels.booking import Booking, BookingRequestResponse  # noqa: E402
+from Hotels.structure import Hotel, Room  # noqa: E402
+from Users.user import User  # noqa: E402
 
 
 def test_user_email_normalization_and_validation() -> None:
@@ -37,7 +37,7 @@ def test_user_email_normalization_and_validation() -> None:
 
 def test_user_invalid_email_raises_value_error() -> None:
     """Ensure User rejects malformed email addresses."""
-    with pytest.raises(ValueError, match="Invalid email address format"):
+    with pytest.raises(ValueError, match="Invalid email address format"): # type: ignore
         User(
             name="Ada",
             surname="Lovelace",
@@ -73,7 +73,7 @@ def test_room_accepts_valid_payload() -> None:
 def test_hotel_validates_timestamp_ordering() -> None:
     """Ensure Hotel raises when last_modified_at precedes created_at."""
     created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
-    with pytest.raises(ValueError, match="date2 must be greater"):
+    with pytest.raises(ValueError, match="date2 must be greater"): # type: ignore
         Hotel(
             name="Palace",
             phone_number="+1-000",
@@ -130,7 +130,7 @@ def test_booking_duration_and_status_update() -> None:
 def test_booking_validates_dates_and_timestamps() -> None:
     """Ensure Booking enforces both stay range ordering and audit timestamps."""
     start_date = datetime(2024, 5, 1, tzinfo=timezone.utc)
-    with pytest.raises(ValueError, match="end_date must be strictly greater"):
+    with pytest.raises(ValueError, match="end_date must be strictly greater"): # type: ignore
         Booking(
             guest_id=uuid4(),
             room_id=uuid4(),
@@ -141,7 +141,7 @@ def test_booking_validates_dates_and_timestamps() -> None:
         )
 
     created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
-    with pytest.raises(ValueError, match="has invalid timestamps"):
+    with pytest.raises(ValueError, match="has invalid timestamps"): # type: ignore
         Booking(
             guest_id=uuid4(),
             room_id=uuid4(),
