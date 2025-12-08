@@ -44,3 +44,13 @@ class User(BaseModel):
             raise ValueError("Invalid email address format.")
         return lowered
     
+    def to_dict(self) -> dict:
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "surname": self.surname,
+            "email": self.email,
+            "phone_number": self.phone_number,
+            "status": self.status
+            }
+    

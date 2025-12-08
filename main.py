@@ -36,9 +36,6 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI app
 app = FastAPI(title="Ticketing System API", version="1.0.0", lifespan=lifespan)
 
-def get_db(request: Request):
-    return request.app.state.db
-
 app.include_router(user_router, prefix="/users", tags=["Users"])
 # app.include_router(booking_router, prefix="/bookings", tags=["Bookings"])
 # app.include_router(hotel_router, prefix="/hotels", tags=["Hotels"])
