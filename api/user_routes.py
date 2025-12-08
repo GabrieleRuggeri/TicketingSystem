@@ -3,6 +3,7 @@ from postgrest.base_request_builder import APIResponse
 from Users.user import User
 from Database.db import TicketingDB
 from Database.deps import get_db
+from uuid import UUID
 import json
 
 # mount api router
@@ -29,4 +30,18 @@ async def create_user(user: User, db = Depends(get_db)) -> str:
     else:
         result = db.table("users").insert(user.to_dict()).execute()
         return json.dumps( {"result": f"User {user} created", "status": 200} )
-
+    
+@user_router.get("/get_user")
+async def get_user(id: str, db = Depends(get_db)) -> str:
+    try:
+        guid = UUID(id, version=4)
+    except Exception as e:
+        return json.dumps({"result": f"Input id {id} is not a valid guid: {e}", "status": 400})
+    
+    # query the database
+    result = db.table("users").select("*").eq("id", str(guid)).execute()
+    if len(result.data)>0:
+        user = result.data[0]
+        return json.dumps({"result": f"{user}","status": 200})
+    else:
+        return json.dumps({"result": f"No user found with id {id}","status": 404})
