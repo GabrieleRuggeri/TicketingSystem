@@ -6,11 +6,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from email.utils import parseaddr                                  # noqa: E402
-from pydantic import BaseModel, Field, field_validator              # noqa: E402
-from typing import Literal, Optional                                         # noqa: E402
-from uuid import UUID, uuid4                                      # noqa: E402
-from Hotels.booking import Booking                                # noqa: E402
+from email.utils import parseaddr  # noqa: E402
+from pydantic import BaseModel, Field, field_validator  # noqa: E402
+from typing import Literal  # noqa: E402
+from uuid import UUID, uuid4  # noqa: E402
 
 
 class User(BaseModel):
@@ -43,14 +42,19 @@ class User(BaseModel):
         if "@" not in parsed or parsed != lowered:
             raise ValueError("Invalid email address format.")
         return lowered
-    
-    def to_dict(self) -> dict:
+
+    def to_dict(self) -> dict[str, str]:
+        """
+        Serialize the user into a dictionary.
+
+        Returns:
+            dict[str, str]: Mapping with a stringified identifier.
+        """
         return {
             "id": str(self.id),
             "name": self.name,
             "surname": self.surname,
             "email": self.email,
             "phone_number": self.phone_number,
-            "status": self.status
-            }
-    
+            "status": self.status,
+        }

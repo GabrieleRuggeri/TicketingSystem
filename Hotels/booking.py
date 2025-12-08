@@ -39,9 +39,30 @@ class Booking(BaseModel):
         ''' Update the status of the booking. '''
         self.status = new_status
         self.last_modified_at = datetime.now(timezone.utc)
-    
-class BookingRequestResponse(BaseModel):
 
-    booking_id : UUID = Field(description="Booking() unique identifier")
-    status : Literal['confirmed', 'denied']
-    reason_for_deny : Optional[str]
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serialize the booking into a dictionary.
+
+        Returns:
+            dict[str, Any]: Mapping with stringified identifiers and timestamps.
+        """
+        return {
+            "id": str(self.id),
+            "guest_id": str(self.guest_id),
+            "room_id": str(self.room_id),
+            "created_at": self.created_at.isoformat(),
+            "last_modified_at": self.last_modified_at.isoformat(),
+            "status": self.status,
+            "start_date": self.start_date.isoformat(),
+            "end_date": self.end_date.isoformat(),
+            "duration": self.duration,
+        }
+
+
+class BookingRequestResponse(BaseModel):
+    """Response payload for booking requests with optional denial reason."""
+
+    booking_id: UUID = Field(description="Booking() unique identifier")
+    status: Literal["confirmed", "denied"]
+    reason_for_deny: Optional[str]
