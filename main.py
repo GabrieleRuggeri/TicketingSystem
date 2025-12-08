@@ -12,7 +12,10 @@ Each endpoint will support standard HTTP methods (GET, POST, PUT, DELETE)
 to perform CRUD operations on the respective resources.
 '''
 
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+
+from Database.db import TicketingDB
 
 # base models
 from Users.user import User
@@ -24,8 +27,18 @@ from api.user_routes import user_router
 # from api.booking_routes import booking_router
 # from api.hotel_routes import hotel_router
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- Startup ---
+    app.state.db = TicketingDB().client   # create ONCE
+    yield 
+
 # Initialize FastAPI app
-app = FastAPI(title="Ticketing System API", version="1.0.0")
+app = FastAPI(title="Ticketing System API", version="1.0.0", lifespan=lifespan)
+
+def get_db(request: Request):
+    return request.app.state.db
+
 app.include_router(user_router, prefix="/users", tags=["Users"])
 # app.include_router(booking_router, prefix="/bookings", tags=["Bookings"])
 # app.include_router(hotel_router, prefix="/hotels", tags=["Hotels"])
