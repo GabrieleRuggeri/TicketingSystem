@@ -70,6 +70,27 @@ def test_room_accepts_valid_payload() -> None:
     assert room.price == 150
 
 
+def test_room_to_dict_serializes_identifiers() -> None:
+    """Ensure Room.to_dict returns primitives with string identifiers."""
+    room_id = uuid4()
+    hotel_id = uuid4()
+    room = Room(
+        id=room_id,
+        hotel_id=hotel_id,
+        number="101",
+        size="double",
+        price=150,
+    )
+
+    assert room.to_dict() == {
+        "id": str(room_id),
+        "hotel_id": str(hotel_id),
+        "number": "101",
+        "size": "double",
+        "price": 150,
+    }
+
+
 def test_hotel_validates_timestamp_ordering() -> None:
     """Ensure Hotel raises when last_modified_at precedes created_at."""
     created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
@@ -103,6 +124,36 @@ def test_hotel_creation_sets_defaults() -> None:
 
     assert hotel.created_at == created_at
     assert hotel.last_modified_at == updated_at
+
+
+def test_hotel_to_dict_stringifies_timestamps() -> None:
+    """Ensure Hotel.to_dict stringifies identifiers and datetimes."""
+    hotel_id = uuid4()
+    created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    updated_at = created_at + timedelta(hours=1)
+    hotel = Hotel(
+        id=hotel_id,
+        name="Palace",
+        phone_number="+1-000",
+        email="palace@example.com",
+        address="1 Main Street",
+        city="City",
+        country="Country",
+        created_at=created_at,
+        last_modified_at=updated_at,
+    )
+
+    assert hotel.to_dict() == {
+        "id": str(hotel_id),
+        "name": "Palace",
+        "phone_number": "+1-000",
+        "email": "palace@example.com",
+        "address": "1 Main Street",
+        "city": "City",
+        "country": "Country",
+        "created_at": created_at.isoformat(),
+        "last_modified_at": updated_at.isoformat(),
+    }
 
 
 def test_booking_duration_and_status_update() -> None:
@@ -152,6 +203,40 @@ def test_booking_validates_dates_and_timestamps() -> None:
             created_at=created_at,
             last_modified_at=created_at - timedelta(minutes=1),
         )
+
+
+def test_booking_to_dict_serializes_all_fields() -> None:
+    """Ensure Booking.to_dict outputs primitives for persistence."""
+    booking_id = uuid4()
+    guest_id = uuid4()
+    room_id = uuid4()
+    start_date = datetime(2024, 5, 1, tzinfo=timezone.utc)
+    end_date = start_date + timedelta(days=2)
+    created_at = datetime(2024, 4, 30, tzinfo=timezone.utc)
+    last_modified_at = created_at + timedelta(hours=1)
+    booking = Booking(
+        id=booking_id,
+        guest_id=guest_id,
+        room_id=room_id,
+        status="pending",
+        start_date=start_date,
+        end_date=end_date,
+        duration=0,
+        created_at=created_at,
+        last_modified_at=last_modified_at,
+    )
+
+    assert booking.to_dict() == {
+        "id": str(booking_id),
+        "guest_id": str(guest_id),
+        "room_id": str(room_id),
+        "created_at": created_at.isoformat(),
+        "last_modified_at": last_modified_at.isoformat(),
+        "status": "pending",
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "duration": 2,
+    }
 
 
 def test_booking_request_response_handles_optional_reasoning() -> None:
