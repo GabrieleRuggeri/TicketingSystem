@@ -13,14 +13,9 @@ to perform CRUD operations on the respective resources.
 '''
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 
 from Database.db import TicketingDB
-
-# base models
-from Users.user import User
-from Hotels.booking import Booking
-from Hotels.structure import Hotel
 
 # routers
 from api.user_routes import user_router
