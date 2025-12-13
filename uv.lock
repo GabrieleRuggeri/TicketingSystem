@@ -844,6 +844,7 @@ dependencies = [
     { name = "packaging" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
+    { name = "pytest" },
     { name = "supabase" },
     { name = "uvicorn" },
 ]
@@ -860,6 +861,7 @@ requires-dist = [
     { name = "packaging", specifier = "<=21.3" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.1" },
     { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest", marker = "extra == 'testing'", specifier = ">=8" },
     { name = "supabase", specifier = ">=2.24.0" },
     { name = "uvicorn", specifier = ">=0.38.0" },
