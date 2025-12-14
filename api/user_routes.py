@@ -7,6 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
+from .utils import _parse_id as _parse_user_id
+
 try:  # Supabase dependency used for conflict detection on inserts.
     from postgrest.exceptions import APIError # type: ignore
 except Exception:  # pragma: no cover - fallback for environments without Supabase
@@ -24,22 +26,10 @@ from .models import MessageResponse, UserFields, UserResponse
 logger = logging.getLogger(__name__)
 
 USER_TABLE_NAME = "users"
+USER = "user"
 
 # mount api router
 user_router = APIRouter()
-
-
-def _parse_user_id(user_id: str) -> UUID:
-    """Validate and normalize a user identifier."""
-
-    try:
-        return UUID(user_id, version=4)
-    except ValueError as exc:
-        logger.warning("Invalid GUID supplied for user_id", extra={"user_id": user_id})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The supplied user id is not a valid UUID4.",
-        ) from exc
 
 
 async def _fetch_user_record(
@@ -190,7 +180,7 @@ async def get_user(user_id: str, db=Depends(get_db)) -> UserResponse:
         UserResponse wrapping the requested user.
     """
 
-    guid = _parse_user_id(user_id)
+    guid = _parse_user_id(user_id, logger, USER)
 
     record = await _fetch_user_record(
         db,
@@ -223,7 +213,7 @@ async def update_user(user_id: str, fields: UserFields, db=Depends(get_db)) -> U
         UserResponse wrapping the updated user.
     """
 
-    guid = _parse_user_id(user_id)
+    guid = _parse_user_id(user_id, logger, USER)
     updates = fields.model_dump(exclude_unset=True, exclude_none=True)
 
     if not updates:
@@ -283,7 +273,7 @@ async def delete_user(user_id: str, db=Depends(get_db)) -> MessageResponse:
         MessageResponse confirming deletion.
     """
 
-    guid = _parse_user_id(user_id)
+    guid = _parse_user_id(user_id, logger, USER)
 
     _ = await _fetch_user_record(
         db,

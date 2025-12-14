@@ -20,7 +20,7 @@ from Database.db import TicketingDB
 # routers
 from api.user_routes import user_router
 # from api.booking_routes import booking_router
-# from api.hotel_routes import hotel_router
+from api.hotel_routes import hotel_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,7 +33,7 @@ app = FastAPI(title="Ticketing System API", version="1.0.0", lifespan=lifespan)
 
 app.include_router(user_router, prefix="/users", tags=["Users"])
 # app.include_router(booking_router, prefix="/bookings", tags=["Bookings"])
-# app.include_router(hotel_router, prefix="/hotels", tags=["Hotels"])
+app.include_router(hotel_router, prefix="/hotels", tags=["Hotels"])
 
 @app.get("/")
 async def root():
