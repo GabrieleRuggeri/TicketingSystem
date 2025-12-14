@@ -25,7 +25,7 @@ erDiagram
         uuid hotel_id FK
         string number
         string size
-        float price
+        int price
     }
 
     USER {

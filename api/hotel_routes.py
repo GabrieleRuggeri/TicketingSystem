@@ -1,7 +1,6 @@
 """Hotel-related FastAPI routes."""
 
 import logging
-from re import U
 from typing import Any
 from uuid import UUID
 from datetime import datetime, timezone
@@ -257,21 +256,21 @@ async def update_hotel(hotel_id: str, fields: HotelFields, db=Depends(get_db)) -
 
     guid = _parse_hotel_id(hotel_id, logger, HOTEL)
     updates = fields.model_dump(exclude_unset=True, exclude_none=True)
-    # update modification timestamp
-    try:
-        updates["last_modified_at"] = datetime.now(timezone.utc).isoformat()
-    except Exception as e:
-        logger.exception(f"Error in updating last_modified_at field for hotel {hotel_id}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error for last_modified_at field: {e}"
-        ) from e
-    
+
     if not updates:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one field must be provided for update.",
         )
+
+    try:
+        updates["last_modified_at"] = datetime.now(timezone.utc).isoformat()
+    except Exception as exc:
+        logger.exception("Error in updating last_modified_at field", extra={"hotel_id": hotel_id})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error for last_modified_at field: {exc}",
+        ) from exc
 
     _ = await _fetch_hotel_record(
         db,

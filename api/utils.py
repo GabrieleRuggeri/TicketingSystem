@@ -10,7 +10,13 @@ def _parse_id(
         logger: Logger, 
         entity: Literal['user', 'hotel', 'room', 'booking', 'undefined_entity'] = entity_type
     ) -> UUID:
-    """Validate and normalize a user identifier."""
+    """Validate and normalize a GUID identifier for any entity among:
+    - user
+    - hotel
+    - room
+    - booking
+    - undefined entity.
+    """
 
     try:
         return UUID(id, version=4)
@@ -18,5 +24,5 @@ def _parse_id(
         logger.warning(f"Invalid GUID supplied for {entity}_id", extra={f"{entity}_id": id})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The supplied {entity} id is not a valid UUID4.",
+            detail=f"The supplied {entity} id is not a valid UUID4.",
         ) from exc
