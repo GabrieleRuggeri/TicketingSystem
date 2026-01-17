@@ -19,6 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from Hotels.booking import Booking, BookingRequestResponse  # noqa: E402
 from Hotels.structure import Hotel, Room  # noqa: E402
+from api.models import RoomFields  # noqa: E402
 from Users.user import User  # noqa: E402
 
 
@@ -89,6 +90,21 @@ def test_room_to_dict_serializes_identifiers() -> None:
         "size": "double",
         "price": 150,
     }
+
+
+def test_room_fields_accepts_partial_payload() -> None:
+    """Ensure RoomFields accepts partial update payloads."""
+    fields = RoomFields(number="202", price=250)
+
+    assert fields.number == "202"
+    assert fields.price == 250
+    assert fields.size is None
+
+
+def test_room_fields_rejects_invalid_size() -> None:
+    """Ensure RoomFields rejects unsupported size values."""
+    with pytest.raises(ValueError, match="Input should be"):
+        RoomFields(size="penthouse")  # type: ignore[arg-type]
 
 
 def test_hotel_validates_timestamp_ordering() -> None:

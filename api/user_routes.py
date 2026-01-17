@@ -76,6 +76,31 @@ async def _fetch_user_record(
     return result.data[0]
 
 
+def _is_unique_violation(error: Exception) -> bool:
+    """
+    Determine whether an API error represents a uniqueness constraint violation.
+
+    Args:
+        error: Exception raised by the persistence layer.
+
+    Returns:
+        True if the error indicates a duplicate/unique constraint conflict.
+    """
+
+    error_code = getattr(error, "code", None)
+    if error_code == "23505":
+        return True
+
+    status_code_value = getattr(error, "status_code", None)
+    if status_code_value == status.HTTP_409_CONFLICT:
+        return True
+    if str(status_code_value) == str(status.HTTP_409_CONFLICT):
+        return True
+
+    message = str(error).lower()
+    return "duplicate key value" in message or "unique constraint" in message
+
+
 @user_router.get("/health", response_model=MessageResponse)
 async def health_check() -> MessageResponse:
     """Quick liveness probe for the user service."""
@@ -131,10 +156,14 @@ async def create_user(user: User, db=Depends(get_db)) -> UserResponse:
     except APIError as exc:
         error_code = getattr(exc, "code", None)
         status_code_value = getattr(exc, "status_code", None)
-        if error_code == "23505" or status_code_value == status.HTTP_409_CONFLICT:
+        if _is_unique_violation(exc):
             logger.info(
                 "Duplicate user creation blocked by unique constraint",
-                extra={"email": normalized_user.email, "error_code": error_code},
+                extra={
+                    "email": normalized_user.email,
+                    "error_code": error_code,
+                    "status_code": status_code_value,
+                },
             )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,

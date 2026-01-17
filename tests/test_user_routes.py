@@ -8,7 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +25,23 @@ class FakeSupabaseResponse:
 
     def __init__(self, data: list[dict[str, Any]]) -> None:
         self.data = data
+
+
+def _set_api_error_metadata(error: Exception, code: str, status_code: int) -> None:
+    """
+    Best-effort setter for API error metadata across implementations.
+
+    Args:
+        error: Error instance to enrich.
+        code: Database error code (e.g., unique violation).
+        status_code: HTTP status code to apply when available.
+    """
+
+    for attribute, value in {"code": code, "status_code": status_code}.items():
+        try:
+            setattr(error, attribute, value)
+        except Exception:
+            continue
 
 
 class FakeTable:
@@ -72,7 +89,7 @@ class FakeTable:
             for row in rows:
                 if any(str(existing.get("email")) == str(row.get("email")) for existing in self._store):
                     error = APIError("duplicate key value violates unique constraint")
-                    error.code = "23505"  # type: ignore[attr-defined]
+                    _set_api_error_metadata(error, "23505", status.HTTP_409_CONFLICT)
                     raise error
             self._store.extend(rows)
             data = rows

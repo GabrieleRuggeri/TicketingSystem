@@ -26,6 +26,13 @@ class HotelFields(BaseModel):
     city : Optional[str] = None
     country : Optional[str] = None
 
+class RoomFields(BaseModel):
+    """Payload accepted when updating an existing room."""
+
+    number: Optional[str] = None
+    size: Optional[Literal["single", "double", "triple", "quadruple", "multiple"]] = None
+    price: Optional[int] = None
+
 
 class MessageResponse(BaseModel):
     """Envelope for simple string responses."""
@@ -45,6 +52,12 @@ class HotelResponse(BaseModel):
 
     status: int
     hotel: Hotel
+
+class RoomResponse(BaseModel):
+    """Envelope for responses that include a room resource."""
+
+    status: int
+    room: Room
 
 class RoomListResponse(BaseModel):
     """Envelope for responses that include a list of rooms resource."""

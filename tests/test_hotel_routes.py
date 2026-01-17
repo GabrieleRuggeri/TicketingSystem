@@ -8,7 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +25,23 @@ class FakeSupabaseResponse:
 
     def __init__(self, data: list[dict[str, Any]]) -> None:
         self.data = data
+
+
+def _set_api_error_metadata(error: Exception, code: str, status_code: int) -> None:
+    """
+    Best-effort setter for API error metadata across implementations.
+
+    Args:
+        error: Error instance to enrich.
+        code: Database error code (e.g., unique violation).
+        status_code: HTTP status code to apply when available.
+    """
+
+    for attribute, value in {"code": code, "status_code": status_code}.items():
+        try:
+            setattr(error, attribute, value)
+        except Exception:
+            continue
 
 
 class FakeTable:
@@ -74,7 +91,17 @@ class FakeTable:
                 for row in rows:
                     if any(str(existing.get("email")) == str(row.get("email")) for existing in self._store):
                         error = APIError("duplicate key value violates unique constraint")
-                        error.code = "23505"  # type: ignore[attr-defined]
+                        _set_api_error_metadata(error, "23505", status.HTTP_409_CONFLICT)
+                        raise error
+            if self._table_name == "rooms":
+                for row in rows:
+                    if any(
+                        str(existing.get("hotel_id")) == str(row.get("hotel_id"))
+                        and str(existing.get("number")) == str(row.get("number"))
+                        for existing in self._store
+                    ):
+                        error = APIError("duplicate key value violates unique constraint")
+                        _set_api_error_metadata(error, "23505", status.HTTP_409_CONFLICT)
                         raise error
             self._store.extend(rows)
             data = rows
@@ -134,7 +161,7 @@ def _build_hotel_payload(**overrides: Any) -> dict[str, Any]:
     return payload
 
 
-def _build_room_payload(hotel_id: str, **overrides: Any) -> dict[str, Any]:
+def _build_room_create_payload(hotel_id: str, **overrides: Any) -> dict[str, Any]:
     payload = {
         "hotel_id": hotel_id,
         "number": "101",
@@ -142,7 +169,11 @@ def _build_room_payload(hotel_id: str, **overrides: Any) -> dict[str, Any]:
         "price": 120,
     }
     payload.update(overrides)
-    return Room(**payload).to_dict()
+    return payload
+
+
+def _build_room_payload(hotel_id: str, **overrides: Any) -> dict[str, Any]:
+    return Room(**_build_room_create_payload(hotel_id, **overrides)).to_dict()
 
 
 def test_create_hotel_returns_hotel_payload(client_and_db: tuple[TestClient, FakeDB]) -> None:
@@ -258,6 +289,126 @@ def test_create_hotel_handles_unique_violation_from_database() -> None:
 
     assert response.status_code == 409
     assert "already exists" in response.json()["detail"]
+
+
+def test_create_room_returns_room_payload(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="rooms@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+
+    response = client.post("/hotels/rooms", json=_build_room_create_payload(hotel_id))
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == 201
+    assert body["room"]["hotel_id"] == hotel_id
+    assert body["room"]["number"] == "101"
+
+
+def test_create_room_requires_existing_hotel(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    missing_hotel_id = str(uuid4())
+
+    response = client.post("/hotels/rooms", json=_build_room_create_payload(missing_hotel_id))
+
+    assert response.status_code == 404
+    assert "No hotel found" in response.json()["detail"]
+
+
+def test_create_room_rejects_duplicate_number_for_hotel(
+    client_and_db: tuple[TestClient, FakeDB],
+) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="duplicate@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+    payload = _build_room_create_payload(hotel_id, number="301")
+
+    first = client.post("/hotels/rooms", json=payload)
+    assert first.status_code == 201
+
+    duplicate = client.post("/hotels/rooms", json=payload)
+
+    assert duplicate.status_code == 409
+    assert "already exists" in duplicate.json()["detail"]
+
+
+def test_get_room_by_id(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="lookup@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+    room_response = client.post("/hotels/rooms", json=_build_room_create_payload(hotel_id))
+    room_id = room_response.json()["room"]["id"]
+
+    fetched = client.get(f"/hotels/rooms/{room_id}")
+
+    assert fetched.status_code == 200
+    assert fetched.json()["room"]["id"] == room_id
+    assert fetched.json()["room"]["hotel_id"] == hotel_id
+
+
+def test_update_room_requires_at_least_one_field(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="update-room@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+    room_response = client.post("/hotels/rooms", json=_build_room_create_payload(hotel_id))
+    room_id = room_response.json()["room"]["id"]
+
+    update = client.put(f"/hotels/rooms/{room_id}", json={})
+
+    assert update.status_code == 400
+    assert "At least one field" in update.json()["detail"]
+
+
+def test_update_room_applies_changes(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="update-room-2@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+    room_response = client.post("/hotels/rooms", json=_build_room_create_payload(hotel_id))
+    room_id = room_response.json()["room"]["id"]
+
+    update = client.put(
+        f"/hotels/rooms/{room_id}", json={"price": 200, "size": "triple"}
+    )
+
+    assert update.status_code == 200
+    body = update.json()
+    assert body["room"]["price"] == 200
+    assert body["room"]["size"] == "triple"
+
+
+def test_update_room_rejects_invalid_price(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="invalid-price@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+    room_response = client.post("/hotels/rooms", json=_build_room_create_payload(hotel_id))
+    room_id = room_response.json()["room"]["id"]
+
+    update = client.put(f"/hotels/rooms/{room_id}", json={"price": -5})
+
+    assert update.status_code == 422
+    assert "Room price must be a positive integer" in update.json()["detail"]
+
+
+def test_delete_room_returns_confirmation_message(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+    creation = client.post("/hotels", json=_build_hotel_payload(email="delete-room@hotel.example"))
+    hotel_id = creation.json()["hotel"]["id"]
+    room_response = client.post("/hotels/rooms", json=_build_room_create_payload(hotel_id))
+    room_id = room_response.json()["room"]["id"]
+
+    deletion = client.delete(f"/hotels/rooms/{room_id}")
+
+    assert deletion.status_code == 200
+    assert f"Room {room_id} deleted" in deletion.json()["message"]
+
+
+def test_get_room_rejects_invalid_uuid(client_and_db: tuple[TestClient, FakeDB]) -> None:
+    client, _ = client_and_db
+
+    response = client.get("/hotels/rooms/not-a-uuid")
+
+    assert response.status_code == 400
+    assert "valid UUID4" in response.json()["detail"]
 
 
 def test_get_rooms_returns_rooms_for_hotel(client_and_db: tuple[TestClient, FakeDB]) -> None:
