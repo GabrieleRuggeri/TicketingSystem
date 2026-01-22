@@ -482,7 +482,7 @@ async def create_room(room: Room, db=Depends(get_db)) -> RoomResponse:
         )
     except APIError as exc:
         error_code = getattr(exc, "code", None)
-        status_code_value = getattr(exc, "status_code", None)
+        getattr(exc, "status_code", None)
         if _is_unique_violation(exc):
             logger.info(
                 "Duplicate room creation blocked by unique constraint",
@@ -638,7 +638,7 @@ async def update_room(room_id: str, fields: RoomFields, db=Depends(get_db)) -> R
         )
     except APIError as exc:
         error_code = getattr(exc, "code", None)
-        status_code_value = getattr(exc, "status_code", None)
+        getattr(exc, "status_code", None)
         if _is_unique_violation(exc):
             logger.info(
                 "Duplicate room update blocked by unique constraint",

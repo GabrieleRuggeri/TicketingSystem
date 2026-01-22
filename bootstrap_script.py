@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Iterable, Sequence
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
@@ -46,7 +46,7 @@ def load_configuration() -> str:
 
     # Build a DSN compatible with psycopg.
     return (
-        f"postgresql://{quote_plus(user)}:{quote_plus(password)}"
+        f"postgresql://{quote_plus(user)}:{quote_plus(password)}" # type: ignore
         f"@{host}:{port}/{dbname}"
     )
 
