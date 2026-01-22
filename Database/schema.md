@@ -26,6 +26,8 @@ erDiagram
         string number
         string size
         int price
+        timestamp created_at
+        timestamp last_modified_at
     }
 
     USER {
@@ -34,6 +36,8 @@ erDiagram
         string surname
         string email
         string phone_number
+        timestamp created_at
+        timestamp last_modified_at
     }
 
     BOOKING {

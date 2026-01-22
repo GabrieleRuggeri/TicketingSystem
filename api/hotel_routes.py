@@ -576,6 +576,15 @@ async def update_room(room_id: str, fields: RoomFields, db=Depends(get_db)) -> R
             detail="At least one field must be provided for update.",
         )
 
+    try:
+        updates["last_modified_at"] = datetime.now(timezone.utc).isoformat()
+    except Exception as exc:
+        logger.exception("Error in updating last_modified_at field", extra={"room_id": room_id})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error for last_modified_at field: {exc}",
+        ) from exc
+
     existing_record = await _fetch_room_record(
         db,
         guid,
